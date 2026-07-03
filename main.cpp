@@ -9,40 +9,21 @@
 
 int main(int argc, char *argv[])
 {
-    // std::cout << "Number of arguments passed " << argc << '\n';
-    // std::cout << "Arguments passed : ";
-    // for (int i = 1; i < argc; i++)
-    // {
-    //     std::cout << argv[i] << " ";
-    // }
-    // std::cout << "\n";
-
-    // if (argc < 2)
-    // {
-    //     std::cout << "Arguments passed not enough : ";
-    //     std::cout << "Usage : " << argv[0] <<
-    // }
 
     std::string ip_addr;
-    std::cout << "Enter the ip address : ";
-    std::cin >> ip_addr;
-
-    // int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-
-    // if (clientSocket < 0)
-    // {
-    //     std::cerr << "error: socket address not valid\n"
-    //               << std::endl;
-    //     return 1;
-    // }
+    if (argc >= 2)
+    {
+        ip_addr = argv[1];
+    }
+    else
+    {
+        std::cout << "Enter the IP address: ";
+        std::cin >> ip_addr;
+    }
 
     sockaddr_in serverAddress{};
     serverAddress.sin_family = AF_INET;
 
-    // serverAddress.sin_port = htons(10001);
-    // serverAddress.sin_addr = ip_addr;
-
-    // in_add
     int status;
     status = inet_pton(AF_INET, ip_addr.c_str(), &serverAddress.sin_addr);
     if (status <= 0)
@@ -55,73 +36,39 @@ int main(int argc, char *argv[])
         {
             std::cerr << "Error: inet_pton system failure.\n";
         }
-        // close(clientSocket);
         return 1;
     }
 
-    // 17 - 25 port numbers
-
-    for (int i = 0; i <= 1024; i++)
+    for (int i = 1; i <= 65535; i++)
     {
-        // create new client Socket for each port
         int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 
         if (clientSocket < 0)
         {
-            std::cerr << "error: socket address not valid\n"
+            std::cerr << "error: socket creation failed\n"
                       << std::endl;
-            return 1;
+            continue;
         }
 
-        // server ports
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 200000;
+        setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        setsockopt(clientSocket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
         serverAddress.sin_port = htons(i);
 
-        if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
+        if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == 0)
         {
-            std::cerr << "Error connecting on port " << i << '\n';
+            std::cout << "[+] Port " << i << " is OPEN\n";
         }
-        else
+        close(clientSocket);
+
+        if (i % 1000 == 0)
         {
-            std::cout << "Port address " << i << " valid." << '\n';
+            std::cerr << "\rScanning port " << i << "/65535..." << std::flush;
         }
     }
-
-    // if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
-    // {
-    //     std::cerr << "Error connecting " << '\n';
-    //     return 1;
-    // }
-    // else
-    // {
-
-    // for (;;)
-    // {
-    //     bzero(buff, sizeof(buff));
-
-    //     std::cout << "Enter string " << '\n';
-
-    //     n = 0;
-
-    //     while ((buff[n++] = getchar()) != '\n')
-    //         ;
-
-    //     write(clientSocket, buff, sizeof(buff));
-
-    //     bzero(buff, sizeof(buff));
-
-    //     read(clientSocket, buff, sizeof(buff));
-
-    //     printf("From Server : %s", buff);
-
-    //     if (strncmp("exit", buff, 4) == 0)
-    //     {
-    //         printf("Server Exit...\n");
-    //         break;
-    //     }
-    // }
-    // }
-
-    // for(int i = 0; i <= 1023; i++){
-
-    // }
+    std::cerr << "\rScanning port 65535/65535 done \n"
+              << std::flush;
 }
